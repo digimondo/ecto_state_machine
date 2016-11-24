@@ -93,4 +93,25 @@ defmodule EctoStateMachineTest do
       assert Dummy.User.can_make_admin?(context[:admin])            == false
     end
   end
+
+  describe "esm_config" do
+    it "can get config for :rules" do
+      assert match? %{
+        module: Dummy.User,
+        column: :rules,
+        events: [
+          %{from: [:unconfirmed], name: :confirm, to: :confirmed, callback: _, is_custom_callback: true},
+          %{from: [:confirmed, :admin], name: :block, to: :blocked, callback: _, is_custom_callback: false},
+          %{from: [:confirmed], name: :make_admin, to: :admin, callback: _, is_custom_callback: false},
+        ],
+        states: [:unconfirmed, :confirmed, :blocked, :admin]
+      }, Dummy.User.esm_config(:rules)
+    end
+  end
+
+  describe "config_to_dot" do
+    it "can convert config to dot" do
+      assert "digraph G {\n      // initial node\n      \"\" [shape=none];\n      \"\" -> \"unconfirmed\";\n\n      // Transitions.\n      unconfirmed -> confirmed  [style=\"bold\", label=< <B>confirm</B> >] ; confirmed -> blocked  [label=<block>] ; admin -> blocked  [label=<block>] ; confirmed -> admin  [label=<make_admin>]\n\n      // title\n      labelloc=\"t\";\n      label=\"Elixir.Dummy.User rules\";\n    }" == Dummy.User.esm_config(:rules) |> EctoStateMachine.config_to_dot
+    end
+  end
 end

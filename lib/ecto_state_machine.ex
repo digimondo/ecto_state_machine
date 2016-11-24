@@ -4,7 +4,9 @@ defmodule EctoStateMachine do
     states = Keyword.get(opts, :states)
     events = Keyword.get(opts, :events)
       |> Enum.map(fn(event) ->
-        Keyword.put_new(event, :callback, quote do: fn(model) -> model end)
+        event
+          |> Keyword.put(:is_custom_callback, Keyword.has_key?(event, :callback))
+          |> Keyword.put_new(:callback, quote do: fn(model) -> model end)
       end)
       |> Enum.map(fn(event) ->
         Keyword.update!(event, :callback, &Macro.escape/1)
@@ -43,6 +45,50 @@ defmodule EctoStateMachine do
             )
         end
       end
+
+      @doc "Returning the config from EctoStateMachine for given column atom."
+      def esm_config(unquote(column)) do
+        %{
+          module: __MODULE__,
+          column: unquote(column),
+          states: unquote(states),
+          events: unquote(events) |> Enum.map(&Enum.into(&1, %{})),
+        }
+      end
     end
   end
+
+  @doc """
+    Creating a GraphViz definition from a config given by esm_config.
+  """
+  def config_to_dot(%{module: module, column: column, states: states, events: events}) when states != [] do
+
+    transition_strings = events
+      |> Enum.flat_map(fn(%{from: states_from, name: transition_name, to: state_to, is_custom_callback: custom_callback}) ->
+        states_from
+          |> Enum.map(fn(state_from) ->
+            {transition_name, state_from, state_to, custom_callback}
+          end)
+      end)
+      |> Enum.map(fn({transition_name, state_from, state_to, custom_callback}) ->
+        case custom_callback do
+          true -> "#{state_from} -> #{state_to}  [style=\"bold\", label=< <B>#{transition_name}</B> >]"
+          false -> "#{state_from} -> #{state_to}  [label=<#{transition_name}>]"
+        end
+      end)
+
+    "digraph G {
+      // initial node
+      \"\" [shape=none];
+      \"\" -> \"#{states |> List.first}\";
+
+      // Transitions.
+      #{transition_strings |> Enum.join(" ; ")}
+
+      // title
+      labelloc=\"t\";
+      label=\"#{module} #{column}\";
+    }"
+  end
+
 end
