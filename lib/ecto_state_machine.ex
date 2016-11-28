@@ -25,7 +25,7 @@ defmodule EctoStateMachine do
           model
           |> Changeset.change(%{ unquote(column) => "#{unquote(event[:to])}" })
           |> unquote(event[:callback]).()
-          |> validate_state_transition(unquote(event), model)
+          |> unquote(:"validate_state_transition_#{column}")(unquote(event), model)
         end
 
         def unquote(:"can_#{event[:name]}?")(model) do
@@ -33,7 +33,7 @@ defmodule EctoStateMachine do
         end
       end)
 
-      defp validate_state_transition(changeset, event, model) do
+      defp unquote(:"validate_state_transition_#{column}")(changeset, event, model) do
         change = Map.get(model, unquote(column))
 
         if :"#{change}" in event[:from] do

@@ -21,7 +21,23 @@ defmodule Dummy.User do
       ]
     ]
 
+  use EctoStateMachine,
+    column: :level,
+    states: [:beginner, :advanced, :expert],
+    events: [
+      [
+        name:     :ascend_advanced,
+        from:     [:beginner],
+        to:       :advanced
+      ], [
+        name:     :ascend_expert,
+        from:     [:advanced],
+        to:       :expert
+      ],
+    ]
+
   schema "users" do
     field :rules, :string
+    field :level, :string, default: "beginner"
   end
 end
