@@ -15,6 +15,13 @@ defmodule EctoStateMachine do
     quote bind_quoted: [states: states, events: events, column: column] do
       alias Ecto.Changeset
 
+      states
+      |> Enum.each(fn(state) ->
+        def unquote(:"is_#{column}_#{state}?")(model) do
+          :"#{Map.get(model, unquote(column))}" == unquote(state)
+        end
+      end)
+
       events
       |> Enum.each(fn(event) ->
         unless event[:to] in states do

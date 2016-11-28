@@ -10,7 +10,11 @@ defmodule EctoStateMachineTest do
       unconfirmed_user: insert(:user, %{ rules: "unconfirmed" }),
       confirmed_user:   insert(:user, %{ rules: "confirmed" }),
       blocked_user:     insert(:user, %{ rules: "blocked" }),
-      admin:            insert(:user, %{ rules: "admin" })
+      admin:            insert(:user, %{ rules: "admin" }),
+
+      beginner:         insert(:user, %{ level: "beginner" }),
+      advanced:         insert(:user, %{ level: "advanced" }),
+      expert:           insert(:user, %{ level: "expert" }),
     }
   end
 
@@ -91,6 +95,26 @@ defmodule EctoStateMachineTest do
       assert Dummy.User.can_make_admin?(context[:confirmed_user])   == true
       assert Dummy.User.can_make_admin?(context[:blocked_user])     == false
       assert Dummy.User.can_make_admin?(context[:admin])            == false
+    end
+  end
+
+  describe "is_?" do
+    it "#is_level_beginner?", context do
+      assert Dummy.User.is_level_beginner?(context[:beginner])    == true
+      assert Dummy.User.is_level_beginner?(context[:advanced])    == false
+      assert Dummy.User.is_level_beginner?(context[:expert])      == false
+    end
+
+    it "#is_level_advanced?", context do
+      assert Dummy.User.is_level_advanced?(context[:beginner])    == false
+      assert Dummy.User.is_level_advanced?(context[:advanced])    == true
+      assert Dummy.User.is_level_advanced?(context[:expert])      == false
+    end
+
+    it "#is_level_expert?", context do
+      assert Dummy.User.is_level_expert?(context[:beginner])      == false
+      assert Dummy.User.is_level_expert?(context[:advanced])      == false
+      assert Dummy.User.is_level_expert?(context[:expert])        == true
     end
   end
 
